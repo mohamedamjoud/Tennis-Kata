@@ -1,43 +1,61 @@
+using System;
+using System.Text;
+
 namespace Tennis
 {
+    internal class Player(string name)
+    {
+        public string Name { get; private set; } = name;
+        public int Point { get; private set; }
+
+        public void AddPoint() => Point++;
+    }
+    internal enum TennisScoreEnum 
+    {
+        Love,
+        Fifteen,
+        Thirty,
+        Forty,
+        Deuce,
+    }
     public class TennisGame3 : ITennisGame
     {
-        private int p2;
-        private int p1;
-        private string p1N;
-        private string p2N;
+        private readonly Player _firstPlayer;
+        private readonly Player _secondPlayer;
 
-        public TennisGame3(string player1Name, string player2Name)
+        public TennisGame3(string firstPlayerName, string secondPlayerName)
         {
-            this.p1N = player1Name;
-            this.p2N = player2Name;
+            _firstPlayer = new Player(firstPlayerName);
+            _secondPlayer = new Player(secondPlayerName);
         }
 
         public string GetScore()
         {
-            string s;
-            if ((p1 < 4 && p2 < 4) && (p1 + p2 < 6))
-            {
-                string[] p = { "Love", "Fifteen", "Thirty", "Forty" };
-                s = p[p1];
-                return (p1 == p2) ? s + "-All" : s + "-" + p[p2];
-            }
-            else
-            {
-                if (p1 == p2)
-                    return "Deuce";
-                s = p1 > p2 ? p1N : p2N;
-                return ((p1 - p2) * (p1 - p2) == 1) ? "Advantage " + s : "Win for " + s;
-            }
+            if (IsFortyOrLess())
+                return PlayersPointAreEqual()
+                    ? $"{(TennisScoreEnum)_firstPlayer.Point}-All"
+                    : $"{(TennisScoreEnum)_firstPlayer.Point}-{(TennisScoreEnum)_secondPlayer.Point}";
+            
+            if (IsDeuce()) return TennisScoreEnum.Deuce.ToString();
+
+            var leadingPlayerName = LeadingPlayer()?.Name;
+            return IsAdvantage()
+                ? $"Advantage {leadingPlayerName}"
+                : $"Win for {leadingPlayerName}";
         }
 
         public void WonPoint(string playerName)
         {
-            if (playerName == "player1")
-                this.p1 += 1;
+            if ( _firstPlayer.Name == playerName)
+                _firstPlayer.AddPoint();
             else
-                this.p2 += 1;
+                _secondPlayer.AddPoint();
         }
 
+        private bool IsFortyOrLess() => (_firstPlayer.Point < 4 && _secondPlayer.Point < 4) && (_firstPlayer.Point + _secondPlayer.Point < 6);
+        private bool PlayersPointAreEqual() => _firstPlayer.Point == _secondPlayer.Point;
+        private bool IsDeuce() => !IsFortyOrLess() && PlayersPointAreEqual();
+        private bool IsAdvantage() => Math.Abs(_firstPlayer.Point - _secondPlayer.Point) == 1;
+        private Player? LeadingPlayer() => _firstPlayer.Point > _secondPlayer.Point ? _firstPlayer : _secondPlayer;
     }
 }
