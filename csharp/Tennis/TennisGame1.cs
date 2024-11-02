@@ -1,82 +1,70 @@
+using System;
+using System.Runtime.Intrinsics.X86;
+
 namespace Tennis
 {
+    public enum ScoreEnum
+    {
+        Love, 
+        Fifteen, 
+        Thirty, 
+        Forty,
+        Deuce,
+    }
+
+    internal class Player(string name)
+    {
+        public string Name = name;
+        public int Score = 0;
+        public void AddPoint()=> Score ++;
+    }
+    
     public class TennisGame1 : ITennisGame
     {
-        private int m_score1 = 0;
-        private int m_score2 = 0;
-        private string player1Name;
-        private string player2Name;
+        private readonly Player _firstPlayer;
+        private readonly Player _secondPlayer;
 
-        public TennisGame1(string player1Name, string player2Name)
+        public TennisGame1(string firstPlayerName, string secondPlayerName)
         {
-            this.player1Name = player1Name;
-            this.player2Name = player2Name;
+            _firstPlayer = new Player(firstPlayerName);
+            _secondPlayer = new Player(secondPlayerName);
         }
 
         public void WonPoint(string playerName)
         {
-            if (playerName == "player1")
-                m_score1 += 1;
+            if (playerName == _firstPlayer.Name)
+                _firstPlayer.AddPoint();
             else
-                m_score2 += 1;
+                _secondPlayer.AddPoint();
         }
 
         public string GetScore()
         {
-            string score = "";
-            var tempScore = 0;
-            if (m_score1 == m_score2)
-            {
-                switch (m_score1)
-                {
-                    case 0:
-                        score = "Love-All";
-                        break;
-                    case 1:
-                        score = "Fifteen-All";
-                        break;
-                    case 2:
-                        score = "Thirty-All";
-                        break;
-                    default:
-                        score = "Deuce";
-                        break;
-
-                }
-            }
-            else if (m_score1 >= 4 || m_score2 >= 4)
-            {
-                var minusResult = m_score1 - m_score2;
-                if (minusResult == 1) score = "Advantage player1";
-                else if (minusResult == -1) score = "Advantage player2";
-                else if (minusResult >= 2) score = "Win for player1";
-                else score = "Win for player2";
-            }
-            else
-            {
-                for (var i = 1; i < 3; i++)
-                {
-                    if (i == 1) tempScore = m_score1;
-                    else { score += "-"; tempScore = m_score2; }
-                    switch (tempScore)
-                    {
-                        case 0:
-                            score += "Love";
-                            break;
-                        case 1:
-                            score += "Fifteen";
-                            break;
-                        case 2:
-                            score += "Thirty";
-                            break;
-                        case 3:
-                            score += "Forty";
-                            break;
-                    }
-                }
-            }
-            return score;
+            if (ArePlayersScoreEqual()) return GetEqualScore(); 
+            if (IsTheEndOfGame())
+                 return GetEndGameScore(); 
+            return  $"{(ScoreEnum)_firstPlayer.Score}-{(ScoreEnum)_secondPlayer.Score}";
         }
+
+        private string GetEndGameScore()
+        {
+            return Math.Abs(_firstPlayer.Score - _secondPlayer.Score) switch
+            {
+                1 => $"Advantage {LeadingPlayer.Name}",
+                _ => $"Win for {LeadingPlayer.Name}"
+            };
+        }
+        private string GetEqualScore()
+        {
+            return  _firstPlayer.Score switch
+            {
+                var x and < 3 => $"{(ScoreEnum)x}-All",
+                _ => $"{ScoreEnum.Deuce}"
+            };
+        }
+        private bool IsTheEndOfGame() => _firstPlayer.Score >= 4 || _secondPlayer.Score >= 4;
+        private bool ArePlayersScoreEqual() => _firstPlayer.Score == _secondPlayer.Score;
+        private Player LeadingPlayer => _firstPlayer.Score > _secondPlayer.Score ? _firstPlayer : _secondPlayer;
     }
 }
 
